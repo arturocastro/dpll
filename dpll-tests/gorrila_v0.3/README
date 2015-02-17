@@ -1,0 +1,269 @@
+
+(*---------------------- GoRRiLA v0.2 --------------------------------------*)
+
+Copyright (C) 2006-2008 The University of Manchester. 
+
+Authors: Konstantin Korovin & Andrei Voronkov,  The University of Manchester
+
+Distributed under GNU GPL License 
+
+(*----------------------------------------------------------------------[C]-*)
+
+ 
+GoRRiLA is a generator of random problems for linear rational/integer arithmetic (in the SMT format)
+and for propositional logic (in both SMT and DIMACS formats). 
+
+GoRRiLA can be used to evaluate solvers on the generated problems.
+
+There are a number of parameters which allow 
+to generate hard and in the same time small random problems. 
+
+If you have any questions/suggestions please email: korovin[]cs.man.ac.uk
+
+
+----------------------------------------------------------------------------------
+
+We assume that OCaml is installed.
+
+To build run "make"
+ 
+
+
+----------------------------------------------------------------------------------
+ 
+For list of options and documentation on them run
+
+gorrila --help
+
+You can collect your favourite options in a file and run 
+
+gorrila $(cat options)
+
+If GoRRiLA is terminated by Ctrl-C then all generated files (results and log files) are in usable state. 
+
+----------------------------------------------------------------------------------
+
+Examples of using GoRRiLA.
+
+
+------------------------------Linear Arithmetic-----------------------------------
+
+Examples below are for linear rational arithmetic, 
+linear integer arithmetic replace "--rnd_lra true" with "--rnd_lia true"
+
+----------------------------------------------------------------------------------
+1) generating random problems and evaluating them using an SMT solver 
+   (or SAT/SMT solver in the propositional case)
+----------------------------------------------------------------------------------
+
+ Example1: generates random linear rational problems and evaluates them using "z3 -in"
+ Assumes: directory "problems_gen" exists and "z3" is in the current directory. 
+
+
+ gorrila  --rnd_lra                   true\
+          --rnd_run_on_random         true\
+	  --output_dir                problems_gen\
+	  --rnd_output_results_file   random_generator_z3.res\
+          --log_file                  random_generator_z3.log\
+	  --solver_timeout            20.\
+          --rnd_num_of_vars           "[20,40]"\
+	  --rnd_num_same_var_probs    5\
+          --rnd_la_coeff              "[-20,20]"\
+	  --rnd_la_vars_in_constr     "[3.,0.5v]"\
+	  --rnd_la_eqs_per_vars       "[0.2v,0.5v]"\
+          --rnd_la_deqs_per_vars      "[0.,0.]"\
+          --rnd_la_geqs_per_vars      "[0.6v,1.3v]"\
+          --rnd_la_grs_per_vars       "[0.6v,1.3v]"\
+	  --solver                    "z3 -in"
+
+This will generate a file problems_gen/random_generator.res  
+which will contain lines of the form 
+
+"z3 -in" rnd "lra rnd 792411 v 35 gr 30 greq 26 eq 10 deq 0 vpp [3,17] cf [-20,20]" exit 0 sat time 2.7
+"z3 -in" rnd "lra rnd 880902 v 38 gr 43 greq 39 eq 14 deq 0 vpp [3,19] cf [-20,20]" exit 0 unsat time 15.5
+"z3 -in" rnd "lra rnd 357779 v 40 gr 50 greq 50 eq 10 deq 0 vpp [3,20] cf [-20,20]" exit 0 unknown time timeout
+
+Where each line consists of: 
+      a) name of the solver used, 
+      b) source of the problem (random generation in this case)
+      c) parameters of the random problem (we can use them to generate explicitly the problem)
+      d) exit status of the solver; 
+         if the solver is abnormally terminated (e.g. terminates with a segmentation fault) 
+         then "killed signal_name" is output
+      d) status of the problem as returned by the solver, and
+      e) time used by the solver
+
+Note we do not explicitly store the problems but only store their codes, 
+for explicit generation of problems from the codes (see 3 below).
+
+We are using two types of intervals i) e.g. [20,40] with integer bounds 
+                                   ii) e.g. [3.,0.5v] where one/both/none 
+                                       of the bounds depend on the number of variables 
+                                       by a floating point factor.
+In this example we generate: 
+  a) problems with variables ranging from 20 to 40, 
+  b) the number of problems with each number of variables is 5, 
+  c) non-zero coefficients are taken at random from the interval [-20,20] (excluding 0)
+  d) the number of variables with non-zero coefficients 
+     in a constraint is taken at random from the interval [3.,0.5v]
+     (note that the right bound depends on the number of variables)
+  e) the number of equations per the number of variables is 
+     taken at random from the interval "[0.2v,0.5v]"
+     similar for all other types of constraints 
+     "deqs" -- disequalities, "geqs" -- >=, "grs" >  
+     (note that in this example no disequalities will be generated 
+      since the specified interval is [0.,0.])
+
+Summary of results is output in the log file.
+
+If you want just to generate results file without 
+evaluating the problems you can use  "dummy_solver" (provided) 
+which is just "bash echo "unknown"".
+
+
+----------------------------------------------------------------------------------
+2) Example: running another solver on the same problems.
+----------------------------------------------------------------------------------
+Having generated a file with the problems codes 
+we can run another solver on these (or any subset of these) problems.
+
+ gorrila  --rnd_run_on_results_file   true\
+          --rnd_input_results_file    problems_gen/random_generator_z3.res\
+	  --output_dir                problems_gen\
+	  --rnd_output_results_file   random_generator_cvc3.res\
+          --log_file                  random_generator_cvc3.log\
+	  --solver_timeout            20.\
+	  --solver                    "cvc3-optimized -lang smt"
+
+
+In this case GoRRiLA  runs "cvc3-optimized -lang smt" on problems encoded in the file 
+"problems_gen/random_generator_z3.res",  and outputs new evaluation of the problems in 
+"problems_gen/random_generator_cvc3.res".
+
+Comparison of times and occurred inconsistencies are 
+output in the log file "problems_gen/random_generator_cvc3.log".
+You can grep the log file for "inconsist", "better", "worse", "same".
+There is a summary at the end of the log file. 
+
+Note that we again do not generate the problems explicitly. 
+The file specified in --rnd_input_results_file can be 
+any file consisting of valid problem lines as above
+(e.g. you can extract only "relevant" lines from the original results file 
+and use them as the input results file). 
+
+For linear integer arithmetic replace "--rnd_lra true" with "--rnd_lia true"
+
+
+----------------------------------------------------------------------------------
+3) Example: generating problems explicitly:
+----------------------------------------------------------------------------------
+Some problems are interesting enough to be generated explicitly. 
+For this place the corresponding lines from the results file 
+into a file e.g. interesting_problems.res 
+
+Then run
+
+gorrila  --rnd_lra                  true\
+	 --rnd_generating_problems  true\
+	 --rnd_input_results_file   interesting_problems.res\
+	 --output_dir               problems_gen 
+
+
+In particular, you can use directly a results file to generate problems explicitly:
+
+gorrila  --rnd_lra                  true\
+	 --rnd_generating_problems  true\
+	 --rnd_input_results_file   problems_gen/random_generator_z3.res\
+	 --output_dir               problems_gen 
+
+ 
+
+
+------------------------------------Propositional--------------------------------------
+
+
+The propositional interface to GoRRiLA is similar to the linear arithmetic one. 
+
+1. Example of how generate random propositional problems 
+   and evaluate them using minisat (you can use any other sat solver accepting DIMACS/SMT format):
+
+gorrila --rnd_prop                  true\
+        --rnd_run_on_random         true\
+        --solver_sat_str            "SATISFIABLE"\
+        --solver_unsat_str          "UNSATISFIABLE"\
+        --rnd_output_results_file   random_generator_minisat.res\
+        --log_file                  random_generator_minisat.log\
+        --output_dir                problems_prop\
+        --rnd_num_of_vars           "[10,300]"\
+        --rnd_num_same_var_probs    1\
+        --rnd_prop_cl_per_var       4.25\
+        --rnd_prop_lit_in_cl        "[3,3]"\
+        --rnd_prop_out_format       "dimacs"\
+        --solver                    minisat_static
+
+
+This will generate file:  random_generator.res in problems_prop/ with problems codes and their 
+minisat evaluation.
+
+You can use an SMT solver to evaluate problems specifying --rnd_prop_out_format "smt", 
+(or "dummy_solver" as above).
+
+
+2. You can run another solver (it can have different input format) on these problems:
+
+gorrila --rnd_run_on_results_file   true\
+        --solver_sat_str            "sat"\
+        --solver_unsat_str          "unsat"\
+        --rnd_input_results_file    problems_prop/random_generator_minisat.res\
+        --rnd_output_results_file   random_generator_z3.res\
+        --log_file                  random_generator_z3.log\
+        --output_dir                problems_prop\
+        --rnd_prop_out_format       "smt"\
+        --solver                    "z3_2.4_2010 -in"
+
+
+This will generate two files random_generator_z3.res and random_generator_z3.log where 
+random_generator_z3.res contains evaluation of this problems by z3 and 
+random_generator_z3.log contains comparison of z3 with the original solver 
+(minisat_static in this case).
+You can grep the log file for "inconsist", "better", "worse", "same".
+There is a summary at the end of the log file. 
+
+
+3. You can generate explicitly all (or a subset of the problems) represented in a results file:
+
+gorrila --rnd_prop                   true\
+        --rnd_generating_problems    true\
+        --rnd_prop_out_format        "smt"\
+        --rnd_input_results_file     problems_prop/random_generator_minisat.res\
+        --output_dir                 problems_prop
+
+	
+(or generate the problems in the dimacs format by specifying --rnd_prop_out_format "dimacs")
+        
+
+-----------------------------Extras-------------------------------------------------
+
+4) Example: run solver on problems in a dir
+
+   gorrila --rnd_run_on_dir            true\
+           --rnd_run_on_dir_ext        "smt"\
+	   --input_dir                 input_dir\
+	   --output_dir                results_dir\
+	   --rnd_output_results_file   random_generator_cvc3.res\
+           --log_file                  random_generator_cvc3.log\
+	   --solver                    "cvc3-optimized -lang smt"
+  
+5. Example: run solver on problems in a dir selected 
+   from the file results_dir/random_generator_cvc3.res 
+
+   gorrila --rnd_run_on_results_file   true\
+           --rnd_input_results_file    results_dir/random_generator_cvc3.res\
+	   --input_dir                 input_dir\
+	   --output_dir                results_dir\
+           --rnd_prop_out_format        "smt"\
+	   --rnd_output_results_file   random_generator_bclt.res\
+           --log_file                  random_generator_bclt.log\
+	   --solver                    "bclt_run"
+  
+

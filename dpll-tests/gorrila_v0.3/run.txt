@@ -1,0 +1,7 @@
+ocamlopt -I obj/  -o obj/lib.cmi -c src/lib.mli 
+ocamlopt -I obj/  -o obj/lib.cmx -c src/lib.ml
+ocamlopt -I obj/  -o obj/options_rnd_gen.cmi -c src/options_rnd_gen.mli 
+ocamlopt -I obj/  -o obj/options_rnd_gen.cmx -c src/options_rnd_gen.ml
+ocamlopt -I obj/  -o obj/solver_run.cmi -c src/solver_run.mli 
+ocamlopt -I obj/  -o obj/solver_run.cmx -c src/solver_run.ml
+ocamlopt -I obj/ unix.cmxa str.cmxa obj/lib.cmx obj/options_rnd_gen.cmx obj/solver_run.cmx -o gorrila src/gorrila.ml 

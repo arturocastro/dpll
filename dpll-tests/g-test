@@ -1,0 +1,35 @@
+#!/bin/sh
+
+if [ "$#" -ne 3 ]; then
+	echo "Usage: g-test <set> <out_dir> <jar-name>"
+	echo "     <set>: simple, medium, hard"
+	exit 1
+fi
+
+pset=$1
+out_dir=$2
+name=$3
+
+#create an output dir if necessary
+mkdir -p $out_dir
+
+# run the tests for a given problem set
+./gorrila --rnd_run_on_results_file   true\
+           --rnd_input_results_file    dpll_tests/minisat-$pset.res\
+           --input_dir                 dpll_tests/$pset\
+           --output_dir                $out_dir\
+           --rnd_prop_out_format        "dimacs"\
+           --solver_sat_str            "sat"\
+           --solver_unsat_str          "unsat"\
+           --rnd_output_results_file   $name-$pset.res\
+           --log_file                  $name-$pset.log\
+           --solver                    "java -jar $name.jar"
+
+
+#           --solver                    "./dpll-base"
+
+
+
+
+
+
