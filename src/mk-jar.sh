@@ -15,6 +15,6 @@ echo>>m.mf
 
 javac *.java
 
-/opt/JDK/jdk1.8.0_11/bin/jar cvfm $class.jar m.mf *.class
+jar cvfm $class.jar m.mf *.class
 
 rm -f m.mf

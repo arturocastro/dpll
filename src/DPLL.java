@@ -260,6 +260,10 @@ public class DPLL {
 
 	// add literal to a unit propagation queue
 	void addUnitProp(int lit) throws Conflict {
+		// check if given unit is already scheduled for propagation
+		if (upQueue.contains(lit)) {
+			return;
+		}
 		int var = lit2var(lit);
 		// dbg("DPLL.addUnitProp(): " + lit);
 		if ((varInit[var] && varValue[var] != isPos(lit)) || upQueue.contains(-lit)) {
@@ -291,6 +295,7 @@ public class DPLL {
 				// conflict here
 				throw new Conflict();
 			}
+
 		} else {
 			// need to initialise variable
 			varInit[var] = true;
@@ -391,6 +396,7 @@ public class DPLL {
 		while (!trail.isEmpty()) {
 			int lit = trail.pop();
 			int var = lit2var(lit);
+			dbg("DPLL.analyseConflict(): lit " + lit + ", var " + var);
 			// vars in trail should be defined
 			assert (varInit[var]);
 
