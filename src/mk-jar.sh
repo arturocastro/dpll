@@ -18,3 +18,5 @@ javac *.java
 jar cvfm $class.jar m.mf *.class
 
 rm -f m.mf
+
+cp $class.jar ../dpll-tests/DPLLN.jar

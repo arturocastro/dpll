@@ -15,7 +15,7 @@ import java.io.*;
 import java.util.*;
 
 // minimal DPLL Sat Solver
-public class DPLL {
+public class DPLL_original {
 
 	//
 	// exceptions
@@ -35,7 +35,7 @@ public class DPLL {
 	//
 	// debug
 	//
-	static boolean DEBUG = false;
+	static boolean DEBUG = true;
 
 	static void dbg(String s) {
 		if (DEBUG) {
@@ -169,7 +169,7 @@ public class DPLL {
 	}
 
 	public static void main(String[] args) throws IOException {
-		DPLL dpll = new DPLL();
+		DPLL_original dpll = new DPLL_original();
 		InputStream is = System.in;
 		if (args.length > 0)
 			is = new FileInputStream(args[0]);
@@ -210,9 +210,8 @@ public class DPLL {
 	// unit propagation queue
 	private Queue<Integer> upQueue = new LinkedList<Integer>();
 
-	// undefined vars queue -- replaced by order
+	// undefined vars queue
 	Queue<Integer> varQueue = new LinkedList<Integer>();
-        
 
 	// trail -- all the literal assignments in chronological order
 	Deque<Integer> trail = new ArrayDeque<Integer>();
@@ -231,18 +230,12 @@ public class DPLL {
 		varDecision = new boolean[nVars + 1];
 		lit2clauses = new HashMap<Integer, List<Clause>>();
 
-		// New code
-		order = new VarOrder(n);
-
 		// set the defaults
 		for (int i = 1; i <= n; i++) {
 			varInit[i] = false;
 			varValue[i] = false;
 			varDecision[i] = false;
 			varQueue.add(i);
-			
-			order.newVar(i);
-			
 			lit2clauses.put(i, new ArrayList<Clause>());
 			lit2clauses.put(-i, new ArrayList<Clause>());
 		}
@@ -331,7 +324,6 @@ public class DPLL {
 		// get the first element in the queue
 		// that is uninitialised
 		int var = getDecideVar();
-		dbg("After decide");
 		varInit[var] = true;
 		// assign it to true
 		varValue[var] = true;
@@ -347,18 +339,8 @@ public class DPLL {
 	// get unassigned var
 	int getDecideVar() throws Satisfiable {
 		while (!varQueue.isEmpty()) {
-		        // New code
-
-		        // Get variable with highest activity instead of just the first of varQueue
-		        int var = order.select();
-			//int var = varQueue.element();
-			
-			if (var == -1) {
-			    var = varQueue.element();
-			}
-
-			// Remove actual max var found instead of first of varQueue
-			varQueue.remove(var);
+			int var = varQueue.element();
+			varQueue.remove();
 			if (!varInit[var]) {
 				// uninitialised var
 				return var;
@@ -375,16 +357,13 @@ public class DPLL {
 		dbg("DPLL.solve(): Solving...");
 		// exit via exceptions
 		while (true) {
-		    dbg("while...");
 			try {
 				// reset optimisation here
-				//if ( needReset() )
-				//        resetState();
+				// if ( needReset() )
+				// resetState();
 
 				// propagate unit clauses
-				dbg("before propagate");
 				propagate();
-				dbg("after propagate");
 
 				// decide new literal
 				decide();
@@ -394,11 +373,6 @@ public class DPLL {
 				// clause learning here
 				// addClause(c);
 				// continue the loop
-
-				// IF top-level conflict found THEN
-				//     return UNSAT
-				// ELSE
-				//     backtrack()
 			}
 		}
 	}
@@ -427,10 +401,6 @@ public class DPLL {
 			assert (varInit[var]);
 
 			if (varDecision[var]) {
-
-			        // New code
-			        varBumpActivity(var);
-
 				// decision var: flip the value
 				boolean newPos = !varValue[var];
 				varValue[var] = newPos;
@@ -447,7 +417,6 @@ public class DPLL {
 				varInit[var] = false;
 				// add it to the var queue
 				varQueue.add(var);
-				order.newVar(var);
 			}
 		}
 	}
@@ -481,132 +450,4 @@ public class DPLL {
 			}
 		}
 	}
-
-    // NEW CODE!
-
-    // Constants
-    
-    final double kVarDecay = 2.0;
-    final double kDoubleLimit = 1.0e100;
-    final double kScaleFactor = 1.0e-100;
-
-    // Variables
-
-    double varIncrement = 1.0;
-    
-    VarOrder order;
-
-    void varBumpActivity(int var) {
-	final double act = order.incrActivity(var, varIncrement);
-
-	if (act == -1) {
-	    return;
-	}
-
-	if (act >= kDoubleLimit) {
-	    varRescaleActivity();
-	}
-
-	order.update();
-    }
-
-    void varDecayActivity() {
-	varIncrement *= kVarDecay; 
-    }
-
-    void varRescaleActivity() {
-	order.rescaleActivities(kScaleFactor);
-	varIncrement *= kScaleFactor;
-    }
-
-    // Implementation of VarOrder interface in MiniSat paper
-    private class VarOrder {
-	
-	// Comparable pair of variable index and corresponding activity.
-	private class SimpleHash implements Comparable<SimpleHash> {
-	    int varIx;
-	    double activity;
-	    
-	    SimpleHash(int pvarIx, double pactivity) {
-		varIx = pvarIx;
-		activity = pactivity;
-	    }
-
-	    @Override
-	    public int compareTo(SimpleHash o) {
-		if (activity == o.activity) {
-		    return 0;
-		}
-		else {
-		    return activity < o.activity ? 1 : -1;
-		}
-	    }
-	}
-
-	PriorityQueue<SimpleHash> _pq;
-	double acts[];
-
-	public VarOrder(int n) {
-	    _pq = new PriorityQueue<SimpleHash>(n + 1);
-	    acts = new double[n + 1];
-	}
-
-	public void newVar(int ix) {
-	    _pq.add(new SimpleHash(ix, acts[ix]));
-	}
-
-	// Heapify.
-	public void update() {
-	    // It's ugly, but it does the job.
-	    _pq.add(_pq.poll());
-	}
-
-	// Get element with highest activity.
-	public int select() {
-	    SimpleHash head = _pq.poll();
-
-	    if (head == null) {
-		return -1;
-	    } else {
-		acts[head.varIx] = head.activity;
-		return head.varIx;
-	    }
-	}
-
-	// Search for variable's activity, increment it and return the new value
-	public double incrActivity(int var, double incr) {
-	    for (SimpleHash pair : _pq) {
-		if (pair.varIx == var) {
-		    pair.activity += incr;
-
-		    acts[pair.varIx] = pair.activity;
-
-		    return pair.activity;
-		}
-	    }
-
-	    return -1.0;
-	}
-
-	// Rescale all activities
-	public void rescaleActivities(double scaleFactor) {
-	    for (SimpleHash pair : _pq) {
-		pair.activity *= scaleFactor;
-		
-		updateActs(pair);
-	    }
-	}
-
-	void updateActs(SimpleHash pair) {
-	    acts[pair.varIx] = pair.activity;
-	}
-    }
-
-    private boolean needReset() {
-	return true;
-    }
-
-    private void resetState() {
-	
-    }	
 }
