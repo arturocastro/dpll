@@ -496,6 +496,7 @@ public class DPLL {
     
     VarOrder order;
 
+    // Routines for activity heuristics, as seen in Minisat Paper - Figure 14.
     void varBumpActivity(int var) {
 	final double act = order.incrActivity(var, varIncrement);
 
@@ -519,7 +520,7 @@ public class DPLL {
 	varIncrement *= kScaleFactor;
     }
 
-    // Implementation of VarOrder interface in MiniSat paper
+    // Implementation of VarOrder interface in MiniSat paper - Figure 4
     private class VarOrder {
 	
 	// Comparable pair of variable index and corresponding activity.
@@ -543,7 +544,9 @@ public class DPLL {
 	    }
 	}
 
+	// Data structure to get var with max activity.
 	PriorityQueue<SimpleHash> _pq;
+	// Buffer to store activities when they are dequeue'd from _pq
 	double acts[];
 
 	public VarOrder(int n) {
@@ -552,6 +555,7 @@ public class DPLL {
 	}
 
 	public void newVar(int ix) {
+	    // Restore previous activity value (init to zero).
 	    _pq.add(new SimpleHash(ix, acts[ix]));
 	}
 
@@ -568,27 +572,29 @@ public class DPLL {
 	    if (head == null) {
 		return -1;
 	    } else {
-		acts[head.varIx] = head.activity;
+		updateActs(head);
+
 		return head.varIx;
 	    }
 	}
 
-	// Search for variable's activity, increment it and return the new value
+	// Search for variable's activity, increment it and return the new value.
 	public double incrActivity(int var, double incr) {
 	    for (SimpleHash pair : _pq) {
 		if (pair.varIx == var) {
 		    pair.activity += incr;
 
-		    acts[pair.varIx] = pair.activity;
+		    updateActs(pair);
 
 		    return pair.activity;
 		}
 	    }
 
+	    // var not found on _pq.
 	    return -1.0;
 	}
 
-	// Rescale all activities
+	// Rescale all activities down.
 	public void rescaleActivities(double scaleFactor) {
 	    for (SimpleHash pair : _pq) {
 		pair.activity *= scaleFactor;
