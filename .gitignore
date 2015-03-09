@@ -3,3 +3,5 @@
 *.jar
 *.class
 *.zip
+*.log
+*.res
