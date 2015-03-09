@@ -11,6 +11,13 @@
 //   You should have received a copy of the GNU General Public License
 //   along with iProver.  If not, see <http://www.gnu.org/licenses/>.
 
+// --------------------------------------------------------------------------
+// Additional code tagged in comments as "New Code"
+// By Arturo Isai Castro Perpuli, 9555767
+// University of Manchester, COMP60332 assignment
+// Performed extensions: Activity Heuristics
+// --------------------------------------------------------------------------
+
 import java.io.*;
 import java.util.*;
 
@@ -608,6 +615,7 @@ public class DPLL {
 	}
     }
 
+    // UNUSED
     private boolean needReset() {
 	return true;
     }

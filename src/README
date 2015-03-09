@@ -1,0 +1,46 @@
+University of Manchester
+COMP60332 - Automated Reasoning and Verification
+
+Assignment for Coursework Week 2
+IMPLEMENTATION OF DPLL SOLVER
+
+
+Student: Arturo Isai Castro Perpuli
+ID: 9555767
+
+
+
+--- Extensions implemented ---
+
+* Activity Heuristics.
+
+This optimization was implemented in accordance to section 4.6 of [1].
+The main idea is that if a variable causes conflicts often, it's given
+a higher priority once selecting a new unassigned variable in future
+assumptions, as this might speed up the resolution of the problem
+when using a DPLL solver.
+
+To achieve this effect, an activity rating or score is given to a
+variable when it's involved in a conflict. All variableshave an
+activity that will continue to increase as they are involved in
+conflicts.  A conflict increments the variable's activity by a
+specific quantity. This quantity is increased with every new conflict
+to give a higher priority to recently conflicted variables.
+
+This activity value assigned to each variables comes into play
+when a new assumption is made, as the varaible with the highest
+activity is selected over the others for the assignment.
+
+
+--- Results ---
+
+The improvements are more apparent using the medium problem-set.
+With dpll-base, the time of resolution when running in
+kilburn.cs.man.ac.uk is of over 4 minutes, while the new solver with
+activity heuristics can run the test in a around a minute and a half.
+
+
+
+--- References ---
+
+[1] Eén, Niklas, and Niklas Sörensson. "An extensible SAT-solver." Theory and applications of satisfiability testing. Springer Berlin Heidelberg, 2004.
