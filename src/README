@@ -21,14 +21,14 @@ assumptions, as this might speed up the resolution of the problem
 when using a DPLL solver.
 
 To achieve this effect, an activity rating or score is given to a
-variable when it's involved in a conflict. All variableshave an
+variable when it's involved in a conflict. All variables have an
 activity that will continue to increase as they are involved in
 conflicts.  A conflict increments the variable's activity by a
 specific quantity. This quantity is increased with every new conflict
 to give a higher priority to recently conflicted variables.
 
 This activity value assigned to each variables comes into play
-when a new assumption is made, as the varaible with the highest
+when a new assumption is made, as the variable with the highest
 activity is selected over the others for the assignment.
 
 
